@@ -6,12 +6,14 @@ var fuzzyMode = (function() {
       var completer = new completion.MergingCompleter([
         new completion.SmartCompleter({
           'wiki ': [ 'Wikipedia (en)', 'http://en.wikipedia.org/wiki/%s' ],
+          'luck ': [ 'Google Lucky (en)', 'http://www.google.com/search?q=%s&btnI=I%27m+Feeling+Lucky' ],
           'cc '  : [ 'dict.cc',        'http://www.dict.cc/?s=%s' ],
           ';'    : [ 'goto',           '%s' ],
           '?'    : [ 'search',         function(query) { return utils.createSearchUrl(query) } ],
         }),
         new completion.FuzzyHistoryCompleter(500),
         new completion.FuzzyBookmarkCompleter(),
+        new completion.FuzzyTabCompleter(),
       ]);
       completer.refresh();
       fuzzyBox = new FuzzyBox(completer, 10);

@@ -58,6 +58,7 @@
     getBookmarks:         getBookmarks,
     getAllBookmarks:      getAllBookmarks,
     getHistory:           getHistory,
+    getTabsInCurrentWindow: getTabsInCurrentWindow,
   };
 
   var sendRequestHandlers = {
@@ -73,7 +74,8 @@
     copyToClipboard: copyToClipboard,
     copyLinkUrl: copyLinkUrl,
     isEnabledForUrl: isEnabledForUrl,
-    saveHelpDialogSettings: saveHelpDialogSettings
+    saveHelpDialogSettings: saveHelpDialogSettings,
+    selectSpecificTab: selectSpecificTab,
   };
 
   // Event handlers
@@ -280,6 +282,14 @@
     Clipboard.copy(request.data);
   }
 
+  /**
+    * Selects the tab with the ID specified in request.id
+    */
+  function selectSpecificTab(request) {
+    console.log("selectSpecificTab");
+    chrome.tabs.update(request.id, { selected: true });
+  }
+
   /*
    * Used by the content scripts to get settings from the local storage.
    */
@@ -308,8 +318,6 @@
     chrome.bookmarks.getTree(function(bookmarks) {
       var results = [];
       traverseTree(bookmarks, function(bookmark) {
-        if (typeof bookmark.url === "undefined")
-          return;
         results.push(bookmark);
       });
       port.postMessage({bookmarks:results});
@@ -319,19 +327,14 @@
   function getHistory(args, port) {
     chrome.history.search({ text: '',
                             maxResults: args.maxResults || 1000 },
-                      function(history) {
-      // sort by visit cound descending
-      history.sort(function(a, b) {
-        // visitCount may be undefined
-        var visitCountForA = a.visitCount || 0;
-        var visitCountForB = a.visitCount || 0;
-        return visitCountForB - visitCountForA;
-      });
-      var results = [];
-      for (var i = 0; i < history.length; ++i) {
-        results.push(history[i]);
-      }
-      port.postMessage({history:results});
+                          function(history) {
+      port.postMessage({history:history});
+    });
+  };
+
+  function getTabsInCurrentWindow(args, port) {
+    chrome.tabs.getAllInWindow(null, function(tabs) {
+      port.postMessage({tabs:tabs});
     });
   };
 
