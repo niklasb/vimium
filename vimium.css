@@ -338,5 +338,4 @@ div.vimium-completions div.vimium-noResults{
 
 #fuzzybox .input .prompt {
   color: orange;
-  content: '>> ';
 }
