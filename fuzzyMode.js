@@ -7,19 +7,22 @@ var fuzzyMode = (function() {
         new completion.SmartCompleter({
           'wiki ': [ 'Wikipedia (en)', 'http://en.wikipedia.org/wiki/%s' ],
           'cc '  : [ 'dict.cc',        'http://www.dict.cc/?s=%s' ],
-          ';'    : [ 'goto',           '%s' ]
+          ';'    : [ 'goto',           '%s' ],
+          '?'    : [ 'search',         function(query) { return utils.createSearchUrl(query) } ],
         }),
-        new completion.FuzzyHistoryCompleter(1000),
+        new completion.FuzzyHistoryCompleter(500),
         new completion.FuzzyBookmarkCompleter(),
       ]);
-      fuzzyBox = new FuzzyBox(completer);
+      completer.refresh();
+      fuzzyBox = new FuzzyBox(completer, 10);
     }
     fuzzyBox.show(newTab);
   }
 
   /** User interface for fuzzy completion */
-  var FuzzyBox = function(completer, reverseAction) {
+  var FuzzyBox = function(completer, maxResults) {
     this.prompt = '> ';
+    this.maxResults = maxResults || 10;
     this.completer = completer;
     this.initDom();
     this.reset();
@@ -27,8 +30,6 @@ var fuzzyMode = (function() {
   FuzzyBox.prototype = {
     show: function(reverseAction) {
       this.reverseAction = reverseAction;
-      this.completer.refresh();
-      this.update();
       this.box.style.display = 'block';
       var self = this;
       handlerStack.push({ keydown: function(event) { self.onKeydown(event); }});
@@ -81,6 +82,12 @@ var fuzzyMode = (function() {
         }
       }
 
+      // refresh with F5
+      else if (keyChar == 'f5') {
+        this.completer.refresh();
+        this.update();
+      }
+
       // use primary action with Enter. Holding down Shift/Ctrl uses the alternative action
       // (opening in new tab)
       else if (event.keyCode == keyCodes.enter) {
@@ -106,30 +113,27 @@ var fuzzyMode = (function() {
       this.query = this.query.replace(/^\s*/, '');
       this.input.textContent = this.query;
 
-      // clear completions
-      this.completions = [];
-      while (this.completionList.hasChildNodes())
-        this.completionList.removeChild(this.completionList.firstChild);
-
       if (this.query.length == 0) {
         this.completionList.style.display = 'none';
         return;
       }
-
       this.completionList.style.display = 'block';
 
-      var li;
-      var counter = 0;
       var self = this;
-      this.completer.filter(this.query, function(completion) {
-        self.completions.push(completion);
-        li = document.createElement('li');
-        li.innerHTML = completion.render();
-        self.completionList.appendChild(li);
-        return ++counter < 10;
-      });
+      this.completer.filter(this.query, function(completions) {
+        // clear completions
+        self.completions = [];
+        while (self.completionList.hasChildNodes())
+          self.completionList.removeChild(self.completionList.firstChild);
 
-      this.updateSelection();
+        for (var i = 0; i < completions.length && i < self.maxResults; ++i) {
+          self.completions.push(completions[i]);
+          var li = document.createElement('li');
+          li.innerHTML = completions[i].render();
+          self.completionList.appendChild(li);
+        }
+        self.updateSelection();
+      });
     },
 
     initDom: function() {
@@ -167,4 +171,3 @@ var fuzzyMode = (function() {
   }
 
 })();
-
