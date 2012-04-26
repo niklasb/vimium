@@ -72,17 +72,17 @@ var fuzzyMode = (function() {
         this.hide();
       }
 
-      // move selection with Up/Down, Tab/Shift-Tab, Ctrl-k/Ctrl-j
-      else if (keyChar === 'up' || (event.keyCode == 9 && event.shiftKey)
-              || (keyChar === 'k' && event.ctrlKey)) {
-        if (this.selection > 0)
-          this.selection -= 1;
+      // move selection with Up/Down, Shift-Tab/Tab, Ctrl-k/Ctrl-j, Ctrl-p/Ctrl-n
+      else if (keyChar === 'up'
+              || (event.keyCode == 9 && event.shiftKey)
+              || ((keyChar === 'p' || keyChar === 'k') && event.ctrlKey)) {
+        this.selection = (this.selection - 1 + this.completions.length) % this.completions.length;
         this.updateSelection();
       }
-      else if (keyChar === 'down' || (event.keyCode == 9 && !event.shiftKey)
-              || (keyChar === 'j' && isPrimaryModifierKey(event))) {
-        if (this.selection < this.completions.length - 1)
-          this.selection += 1;
+      else if (keyChar === 'down'
+              || (event.keyCode == 9 && !event.shiftKey)
+              || ((keyChar === 'j' || keyChar === 'n') && isPrimaryModifierKey(event))) {
+        this.selection = (this.selection + 1) % this.completions.length;
         this.updateSelection();
       }
 
